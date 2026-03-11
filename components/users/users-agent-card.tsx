@@ -16,7 +16,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { askAgentApi } from "@/lib/api/services";
-import { useAuthStore } from "@/store/auth-store";
 import type { AgentChartPayload } from "@/types/api";
 
 interface AgentTurn {
@@ -40,7 +39,6 @@ export function UsersAgentCard() {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [turns, setTurns] = useState<AgentTurn[]>([]);
-  const accessToken = useAuthStore((state) => state.accessToken);
   const listRef = useRef<HTMLDivElement | null>(null);
 
   const timezone = useMemo(
@@ -57,7 +55,7 @@ export function UsersAgentCard() {
 
   const askMutation = useMutation({
     mutationFn: async ({ payload }: { payload: { message: string; timezone?: string }; turnId: number }) =>
-      askAgentApi(payload, accessToken),
+      askAgentApi(payload),
     onSuccess: (data, variables) => {
       setTurns((prev) =>
         prev.map((turn) =>

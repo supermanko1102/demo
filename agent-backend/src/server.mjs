@@ -94,8 +94,18 @@ const server = createServer(async (req, res) => {
       });
       return sendJson(res, 200, result);
     } catch (error) {
+      if (error && typeof error === "object" && "status" in error && typeof error.status === "number") {
+        const message = error instanceof Error ? error.message : "Upstream API error";
+        const code = typeof error.code === "string" ? error.code : undefined;
+        return sendJson(res, error.status, {
+          error: message,
+          message,
+          ...(code ? { code } : {}),
+        });
+      }
+
       const message = error instanceof Error ? error.message : "Unknown server error";
-      return sendJson(res, 500, { error: message });
+      return sendJson(res, 500, { error: message, message });
     }
   }
 

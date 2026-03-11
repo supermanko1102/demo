@@ -1,5 +1,14 @@
 import { chartPayloadSchema, upstreamUsersResponseSchema } from "./schemas.mjs";
 
+class UpstreamApiError extends Error {
+  constructor(status, code, message) {
+    super(message);
+    this.name = "UpstreamApiError";
+    this.status = status;
+    this.code = code;
+  }
+}
+
 export function createAgentLogic({ upstreamApiBaseUrl }) {
   function getBearerToken(authorizationHeader) {
     if (!authorizationHeader || !authorizationHeader.startsWith("Bearer ")) {
@@ -233,8 +242,11 @@ export function createAgentLogic({ upstreamApiBaseUrl }) {
       const message =
         payload && typeof payload.message === "string"
           ? payload.message
-          : `後台 API 錯誤 (${response.status})`;
-      throw new Error(message);
+          : payload && typeof payload.error === "string"
+            ? payload.error
+            : `後台 API 錯誤 (${response.status})`;
+      const code = payload && typeof payload.code === "string" ? payload.code : undefined;
+      throw new UpstreamApiError(response.status, code, message);
     }
 
     const parsed = upstreamUsersResponseSchema.safeParse(payload);

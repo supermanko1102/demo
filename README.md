@@ -140,7 +140,6 @@ components/
     model.ts           # filter schema / query key builder
     users-agent-card.tsx
     users-agent-chart.tsx
-    users-page-client.tsx
     users-table-card.tsx
   ui/* (shadcn components)
 hooks/
@@ -180,13 +179,14 @@ agent-backend/
   - refresh 成功後更新 store 的 access token
 - `lib/api/services.ts`
   - 對外暴露 `loginApi`, `getUsersApi`, `askAgentApi` 等 API 呼叫 function
+  - `askAgentApi` 會在 `401 + TOKEN_EXPIRED` 時 refresh 並重試一次
 - `lib/api/errors.ts`
   - `getApiErrorMessage`：統一解析 API error message
 
 ## Token Refresh 流程
 
-1. 呼叫 `/api/users` 時若 access token 過期，API 回傳 `401` + `TOKEN_EXPIRED`
-2. axios interceptor 觸發 `refreshAccessToken()`
+1. 呼叫 `/api/users` 或 agent `/chat` 時若 access token 過期，API 回傳 `401` + `TOKEN_EXPIRED`
+2. 前端觸發 `refreshAccessToken()`
 3. 以 refresh token 呼叫 `/auth/refresh` 取得新 access token
 4. 更新 store 後自動重試原本失敗的請求
 5. 若 refresh 失敗，清除登入狀態並導向登入頁

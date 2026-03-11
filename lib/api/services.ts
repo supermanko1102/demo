@@ -1,5 +1,6 @@
 import { rawHttp } from "@/lib/api/client";
 import { http } from "@/lib/api/http";
+import { clearAuthSession, getAccessToken, refreshAccessToken } from "@/lib/api/token-manager";
 import type {
   AgentChatRequest,
   AgentChatResponse,
@@ -9,6 +10,12 @@ import type {
 } from "@/types/api";
 
 const AGENT_BACKEND_URL = process.env.NEXT_PUBLIC_AGENT_BACKEND_URL ?? "http://localhost:3400";
+
+interface AgentErrorPayload {
+  code?: string;
+  error?: string;
+  message?: string;
+}
 
 export async function loginApi(payload: { username: string; password: string }) {
   const response = await rawHttp.post<LoginResponse>("/auth", payload);
@@ -20,7 +27,7 @@ export async function getUsersApi(params: UsersQueryParams) {
   return response.data;
 }
 
-export async function askAgentApi(payload: AgentChatRequest, accessToken?: string | null) {
+async function requestAgentChat(payload: AgentChatRequest, accessToken?: string | null) {
   const response = await fetch(`${AGENT_BACKEND_URL}/chat`, {
     method: "POST",
     headers: {
@@ -30,16 +37,47 @@ export async function askAgentApi(payload: AgentChatRequest, accessToken?: strin
     body: JSON.stringify(payload),
   });
 
-  let data: AgentChatResponse | { error?: string } | null = null;
+  let data: AgentChatResponse | AgentErrorPayload | null = null;
   try {
     data = await response.json();
   } catch {
     data = null;
   }
 
+  return { response, data };
+}
+
+function getAgentErrorMessage(data: AgentChatResponse | AgentErrorPayload | null) {
+  if (data && "error" in data && typeof data.error === "string" && data.error.trim()) {
+    return data.error;
+  }
+
+  if (data && "message" in data && typeof data.message === "string" && data.message.trim()) {
+    return data.message;
+  }
+
+  return "Agent 回覆失敗";
+}
+
+function isTokenExpiredError(response: Response, data: AgentChatResponse | AgentErrorPayload | null) {
+  return response.status === 401 && Boolean(data && "code" in data && data.code === "TOKEN_EXPIRED");
+}
+
+export async function askAgentApi(payload: AgentChatRequest) {
+  let { response, data } = await requestAgentChat(payload, getAccessToken());
+
+  if (isTokenExpiredError(response, data)) {
+    try {
+      const newAccessToken = await refreshAccessToken();
+      ({ response, data } = await requestAgentChat(payload, newAccessToken));
+    } catch (error) {
+      clearAuthSession();
+      throw error;
+    }
+  }
+
   if (!response.ok) {
-    const message = data && "error" in data && data.error ? data.error : "Agent 回覆失敗";
-    throw new Error(message);
+    throw new Error(getAgentErrorMessage(data));
   }
 
   if (!data || !("reply" in data) || typeof data.reply !== "string") {
