@@ -11,8 +11,8 @@ import {
 } from "@/components/users/model";
 
 interface UseUsersFiltersOptions {
-  onApply: (payload: { filters: UsersAppliedFilters; limit: number }) => void;
-  onReset: (payload: { filters: UsersAppliedFilters; limit: number }) => void;
+  onApply: (payload: { filters: UsersAppliedFilters }) => void;
+  onReset: (payload: { filters: UsersAppliedFilters }) => void;
 }
 
 export function useUsersFilters({ onApply, onReset }: UseUsersFiltersOptions) {
@@ -28,18 +28,12 @@ export function useUsersFilters({ onApply, onReset }: UseUsersFiltersOptions) {
   });
 
   const submitFilters = handleSubmit((values) => {
-    onApply({
-      filters: toAppliedFilters(values),
-      limit: values.limit,
-    });
+    onApply({ filters: toAppliedFilters(values) });
   });
 
   const resetFilters = () => {
     reset(usersFilterDefaultValues);
-    onReset({
-      filters: {},
-      limit: usersFilterDefaultValues.limit,
-    });
+    onReset({ filters: {} });
   };
 
   return {
@@ -50,3 +44,4 @@ export function useUsersFilters({ onApply, onReset }: UseUsersFiltersOptions) {
     resetFilters,
   };
 }
+

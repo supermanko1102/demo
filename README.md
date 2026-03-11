@@ -67,21 +67,30 @@ app/
   users/page.tsx
   providers.tsx
 components/
+  form/
+    model.ts          # loginSchema / LoginFormValues
+    login-form.tsx
   users/
     hooks/
-    model.ts
+      use-users-query.ts
+      use-users-filters.ts
+      use-users-page-state.ts
+      use-users-autocomplete.ts
+    model.ts           # filter schema / query key builder
     users-page-client.tsx
-  auth/login-form.tsx
+    users-table-card.tsx
   ui/* (shadcn components)
 hooks/
   use-auth-session.ts
   use-auth-redirect.ts
+  use-root-redirect.ts
 lib/
   api/
     client.ts
     http.ts
     token-manager.ts
     services.ts
+    errors.ts
 store/
   auth-store.ts
 types/
@@ -91,7 +100,7 @@ types/
 ## API 封裝設計
 
 - `lib/api/client.ts`
-  - 建立 `rawHttp`（不帶 auth）
+  - 建立 `rawHttp`（不帶 auth，用於 login / refresh）
 - `lib/api/http.ts`
   - 建立 `http`（帶 auth）
   - request interceptor：自動加 `Authorization`
@@ -100,8 +109,9 @@ types/
   - 管理 refresh promise（避免多請求同時 refresh）
   - refresh 成功後更新 store 的 access token
 - `lib/api/services.ts`
-  - 對外暴露 `loginApi`, `getUsersApi` 等 service function
-  - 統一 API error message 解析
+  - 對外暴露 `loginApi`, `getUsersApi` 等 API 呼叫 function
+- `lib/api/errors.ts`
+  - `getApiErrorMessage`：統一解析 API error message
 
 ## Token Refresh 流程
 
@@ -122,6 +132,9 @@ types/
 ## UX / RWD 重點
 
 - shadcn dashboard 風格：sidebar + header + cards + table
+- Filter 放在 table header 右側按鈕，點擊展開側邊 Sheet（不遮蓋資料）
+- Autocomplete 搜尋建議：輸入 2 字元後自動防抖撈取，選取後自動套用篩選
+- Active filter 數量 badge，讓使用者知道目前有幾個條件生效
 - table 狀態完整：loading / error / empty / success
 - 分頁使用 `keepPreviousData`，翻頁體驗較平順
 - 行動裝置 sidebar 自動切為 drawer

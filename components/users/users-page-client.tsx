@@ -6,8 +6,6 @@ import { type CSSProperties } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { useUsersPageState } from "@/components/users/hooks/use-users-page-state";
 import { useUsersQuery } from "@/components/users/hooks/use-users-query";
-import { UsersFiltersCard } from "@/components/users/users-filters-card";
-import { UsersOverviewCards } from "@/components/users/users-overview-cards";
 import { UsersTableCard } from "@/components/users/users-table-card";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -38,13 +36,11 @@ export function UsersPageClient() {
     router.replace("/login");
   };
 
-  const pageUsers = usersQuery.data?.data ?? [];
-  const activeUsersInPage = pageUsers.filter((item) => item.status === "active").length;
-  const inactiveUsersInPage = pageUsers.filter((item) => item.status === "inactive").length;
+  // 計算目前套用的篩選條件數量（用於 badge 顯示）
+  const activeFilterCount = Object.values(filters).filter(Boolean).length;
 
   if (!hydrated || !isAuthenticated) {
     return (
-
       <main className="flex min-h-screen items-center justify-center bg-background">
         <div className="flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600">
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -77,27 +73,17 @@ export function UsersPageClient() {
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <UsersOverviewCards
-                activeCount={activeUsersInPage}
-                currentPage={page}
-                inactiveCount={inactiveUsersInPage}
-                totalPages={totalPages}
-                totalUsers={pagination?.total ?? 0}
-              />
-              <div className="px-4 lg:px-6">
-                <UsersFiltersCard
-                  control={control}
-                  errors={errors}
-                  onReset={resetFilters}
-                  onSubmit={submitFilters}
-                  setValue={setValue}
-                />
-              </div>
               <div className="px-4 lg:px-6">
                 <UsersTableCard
+                  activeFilterCount={activeFilterCount}
+                  control={control}
+                  errors={errors}
+                  onFilterReset={resetFilters}
+                  onFilterSubmit={submitFilters}
                   onNextPage={() => setPage((prev) => Math.min(prev + 1, totalPages))}
                   onPreviousPage={() => setPage((prev) => Math.max(prev - 1, 1))}
                   page={page}
+                  setValue={setValue}
                   total={pagination?.total ?? 0}
                   totalPages={totalPages}
                   usersQuery={usersQuery}

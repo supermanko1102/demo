@@ -5,6 +5,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Loader2, LockKeyhole } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +43,9 @@ export function LoginForm() {
         refreshToken: data.refresh_token,
         expiresIn: data.expires_in,
         user: data.user,
+      });
+      toast.success("登入成功", {
+        description: `歡迎回來，${data.user.username}！`,
       });
       router.replace("/users");
     },
