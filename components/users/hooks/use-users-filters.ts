@@ -18,9 +18,9 @@ interface UseUsersFiltersOptions {
 export function useUsersFilters({ onApply, onReset }: UseUsersFiltersOptions) {
   const {
     control,
-    register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<UsersFilterValues>({
     resolver: zodResolver(usersFilterSchema),
@@ -44,7 +44,7 @@ export function useUsersFilters({ onApply, onReset }: UseUsersFiltersOptions) {
 
   return {
     control,
-    register,
+    setValue,
     errors,
     submitFilters,
     resetFilters,

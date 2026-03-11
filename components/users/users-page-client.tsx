@@ -35,7 +35,7 @@ export function UsersPageClient() {
     enabled: hydrated && isAuthenticated,
   });
 
-  const { control, register, errors, submitFilters, resetFilters } = useUsersFilters({
+  const { control, setValue, errors, submitFilters, resetFilters } = useUsersFilters({
     onApply: ({ filters: nextFilters, limit: nextLimit }) => {
       setPage(1);
       setLimit(nextLimit);
@@ -104,7 +104,7 @@ export function UsersPageClient() {
                   errors={errors}
                   onReset={resetFilters}
                   onSubmit={submitFilters}
-                  register={register}
+                  setValue={setValue}
                 />
               </div>
               <div className="px-4 lg:px-6">
