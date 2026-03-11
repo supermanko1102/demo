@@ -42,7 +42,7 @@ function formatDate(input: string) {
 }
 
 function statusVariant(status: ApiUser["status"]) {
-  return status === "active" ? "success" : "danger";
+  return status === "active" ? "default" : "destructive";
 }
 
 export function UsersTableCard({
@@ -54,10 +54,10 @@ export function UsersTableCard({
   onNextPage,
 }: UsersTableCardProps) {
   return (
-    <Card className="border-stone-300/70 bg-white/90">
+    <Card>
       <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <CardTitle className="text-lg">使用者列表</CardTitle>
-        <div className="flex items-center gap-2 text-xs text-stone-500">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {usersQuery.isFetching ? (
             <>
               <RefreshCw className="h-3.5 w-3.5 animate-spin" />
@@ -73,12 +73,12 @@ export function UsersTableCard({
       </CardHeader>
       <CardContent>
         {usersQuery.isError ? (
-          <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {getApiErrorMessage(usersQuery.error, "讀取列表失敗。")}
           </div>
         ) : null}
 
-        <div className="overflow-x-auto rounded-lg border border-stone-200">
+        <div className="overflow-x-auto rounded-lg border">
           <Table>
             <TableHeader>
               <TableRow>
@@ -92,7 +92,7 @@ export function UsersTableCard({
             <TableBody>
               {usersQuery.isPending ? (
                 <TableRow>
-                  <TableCell className="py-10 text-center text-stone-500" colSpan={5}>
+                  <TableCell className="py-10 text-center text-muted-foreground" colSpan={5}>
                     <span className="inline-flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       載入中...
@@ -103,7 +103,7 @@ export function UsersTableCard({
 
               {!usersQuery.isPending && usersQuery.data?.data.length === 0 ? (
                 <TableRow>
-                  <TableCell className="py-10 text-center text-stone-500" colSpan={5}>
+                  <TableCell className="py-10 text-center text-muted-foreground" colSpan={5}>
                     沒有符合條件的使用者
                   </TableCell>
                 </TableRow>
@@ -125,7 +125,7 @@ export function UsersTableCard({
                   <TableCell>
                     <Badge variant={statusVariant(item.status)}>{item.status}</Badge>
                   </TableCell>
-                  <TableCell className="font-mono text-xs text-stone-600">{formatDate(item.created_at)}</TableCell>
+                  <TableCell className="font-mono text-xs text-muted-foreground">{formatDate(item.created_at)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -133,7 +133,7 @@ export function UsersTableCard({
         </div>
 
         <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <p className="text-sm text-stone-600">
+          <p className="text-sm text-muted-foreground">
             共 {total} 筆，第 {page} / {totalPages} 頁
           </p>
           <div className="flex items-center gap-2">
@@ -161,4 +161,3 @@ export function UsersTableCard({
     </Card>
   );
 }
-

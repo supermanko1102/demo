@@ -17,6 +17,7 @@ interface UseUsersFiltersOptions {
 
 export function useUsersFilters({ onApply, onReset }: UseUsersFiltersOptions) {
   const {
+    control,
     register,
     handleSubmit,
     reset,
@@ -42,10 +43,10 @@ export function useUsersFilters({ onApply, onReset }: UseUsersFiltersOptions) {
   };
 
   return {
+    control,
     register,
     errors,
     submitFilters,
     resetFilters,
   };
 }
-
