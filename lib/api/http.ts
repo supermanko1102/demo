@@ -1,7 +1,6 @@
 import axios, { AxiosError } from "axios";
 import { API_BASE_URL } from "@/lib/api/client";
 import {
-  clearAuthSession,
   getAccessToken,
   refreshAccessToken,
   withAuthorizationHeader,
@@ -57,7 +56,6 @@ http.interceptors.response.use(
         originalRequest.headers = withAuthorizationHeader(originalRequest.headers, newAccessToken);
         return http(originalRequest);
       } catch (refreshError) {
-        clearAuthSession();
         return Promise.reject(refreshError);
       }
     }
@@ -65,4 +63,3 @@ http.interceptors.response.use(
     return Promise.reject(error);
   },
 );
-

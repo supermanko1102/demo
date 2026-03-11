@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
+import { getApiErrorMessage } from "@/lib/api/errors";
 import { getUsersApi } from "@/lib/api/services";
 
 interface UseUsersAutocompleteOptions {
@@ -60,6 +61,8 @@ export function useUsersAutocomplete({
     suggestions,
     isFetching: suggestionsQuery.isFetching,
     isError: suggestionsQuery.isError,
+    errorMessage: suggestionsQuery.isError
+      ? getApiErrorMessage(suggestionsQuery.error, "讀取建議失敗，請稍後再試")
+      : null,
   };
 }
-

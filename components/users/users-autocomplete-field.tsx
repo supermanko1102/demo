@@ -70,7 +70,11 @@ export function UsersAutocompleteField({
             </div>
           ) : null}
 
-          {!autocomplete.isFetching && autocomplete.suggestions.length === 0 ? (
+          {!autocomplete.isFetching && autocomplete.isError ? (
+            <div className="px-2 py-2 text-xs text-destructive">{autocomplete.errorMessage}</div>
+          ) : null}
+
+          {!autocomplete.isFetching && !autocomplete.isError && autocomplete.suggestions.length === 0 ? (
             <div className="px-2 py-2 text-xs text-muted-foreground">沒有建議結果</div>
           ) : null}
 

@@ -3,7 +3,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { toast } from "sonner";
 
 import { LoginForm } from "@/components/form";
@@ -23,7 +22,6 @@ import { useAuthStore } from "@/store/auth-store";
 export default function LoginPage() {
   const router = useRouter();
   const setCredentials = useAuthStore((state) => state.setCredentials);
-  const [serverError, setServerError] = useState<string | null>(null);
 
   useAuthRedirect({ mode: "guest-only", redirectTo: "/users" });
 
@@ -36,19 +34,19 @@ export default function LoginPage() {
         expiresIn: data.expires_in,
         user: data.user,
       });
-      setServerError(null);
       toast.success("登入成功", {
         description: `歡迎回來，${data.user.username}！`,
       });
       router.replace("/users");
     },
-    onError: (error) => {
-      setServerError(getApiErrorMessage(error, "登入失敗，請稍後再試。"));
-    },
   });
 
+  const serverError = loginMutation.isError
+    ? getApiErrorMessage(loginMutation.error, "登入失敗，請稍後再試。")
+    : null;
+
   const handleSubmit = (values: LoginFormValues) => {
-    setServerError(null);
+    loginMutation.reset();
     loginMutation.mutate({
       username: values.username,
       password: values.password,
@@ -67,7 +65,7 @@ export default function LoginPage() {
           </div>
           <CardTitle className="text-2xl">登入後台管理系統</CardTitle>
           <CardDescription>
-            請輸入帳號密碼以繼續。此頁面將會儲存 Access / Refresh Token。
+            請輸入帳號密碼以繼續。
           </CardDescription>
         </CardHeader>
         <CardContent>

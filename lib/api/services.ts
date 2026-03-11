@@ -1,6 +1,6 @@
 import { rawHttp } from "@/lib/api/client";
 import { http } from "@/lib/api/http";
-import { clearAuthSession, getAccessToken, refreshAccessToken } from "@/lib/api/token-manager";
+import { getAccessToken, refreshAccessToken } from "@/lib/api/token-manager";
 import type {
   AgentChatRequest,
   AgentChatResponse,
@@ -27,6 +27,8 @@ export async function getUsersApi(params: UsersQueryParams) {
   return response.data;
 }
 
+// Agent chat targets the local Genkit backend rather than the upstream REST API,
+// so it uses fetch and handles token refresh here instead of the shared axios client.
 async function requestAgentChat(payload: AgentChatRequest, accessToken?: string | null) {
   const response = await fetch(`${AGENT_BACKEND_URL}/chat`, {
     method: "POST",
@@ -67,13 +69,8 @@ export async function askAgentApi(payload: AgentChatRequest) {
   let { response, data } = await requestAgentChat(payload, getAccessToken());
 
   if (isTokenExpiredError(response, data)) {
-    try {
-      const newAccessToken = await refreshAccessToken();
-      ({ response, data } = await requestAgentChat(payload, newAccessToken));
-    } catch (error) {
-      clearAuthSession();
-      throw error;
-    }
+    const newAccessToken = await refreshAccessToken();
+    ({ response, data } = await requestAgentChat(payload, newAccessToken));
   }
 
   if (!response.ok) {

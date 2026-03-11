@@ -1,29 +1,38 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { type CSSProperties } from "react";
+import { type CSSProperties, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
-import { useUsersPageState } from "@/components/users/hooks/use-users-page-state";
+import { useUsersFilters } from "@/components/users/hooks/use-users-filters";
+import { USERS_PAGINATION_DEFAULTS, type UsersAppliedFilters } from "@/components/users/model";
 import { UsersAgentCard } from "@/components/users/users-agent-card";
 import { useUsersQuery } from "@/components/users/hooks/use-users-query";
 import { UsersTableCard } from "@/components/users/users-table-card";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { endClientSession } from "@/lib/auth/end-client-session";
 import { useAuthRedirect } from "@/hooks/use-auth-redirect";
 import { useAuthStore } from "@/store/auth-store";
 
 export default function UsersPage() {
-  const router = useRouter();
   const { hydrated, isAuthenticated } = useAuthRedirect({
     mode: "require-auth",
     redirectTo: "/login",
   });
   const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
+  const [page, setPage] = useState(USERS_PAGINATION_DEFAULTS.page);
+  const [filters, setFilters] = useState<UsersAppliedFilters>({});
+  const limit = USERS_PAGINATION_DEFAULTS.limit;
 
-  const { page, limit, filters, setPage, control, setValue, errors, submitFilters, resetFilters } =
-    useUsersPageState();
+  const applyFilters = ({ filters: nextFilters }: { filters: UsersAppliedFilters }) => {
+    setPage(1);
+    setFilters(nextFilters);
+  };
+
+  const { control, setValue, errors, submitFilters, resetFilters } = useUsersFilters({
+    onApply: applyFilters,
+    onReset: applyFilters,
+  });
 
   const { usersQuery, pagination, totalPages } = useUsersQuery({
     page,
@@ -32,9 +41,11 @@ export default function UsersPage() {
     enabled: hydrated && isAuthenticated,
   });
 
-  const handleLogout = () => {
-    logout();
-    router.replace("/login");
+  const handleLogout = async () => {
+    await endClientSession({
+      reason: "manual",
+      message: "已登出",
+    });
   };
 
   const activeFilterCount = Object.values(filters).filter(Boolean).length;

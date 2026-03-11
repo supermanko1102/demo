@@ -8,7 +8,19 @@ import type { ApiErrorPayload } from "@/types/api";
 export function getApiErrorMessage(error: unknown, fallback = "發生未知錯誤"): string {
   if (error instanceof AxiosError) {
     const payload = error.response?.data as ApiErrorPayload | undefined;
-    return payload?.message ?? error.message ?? fallback;
+    if (payload?.message) {
+      return payload.message;
+    }
+
+    if (error.code === "ECONNABORTED") {
+      return "請求逾時，請稍後再試";
+    }
+
+    if (!error.response) {
+      return "網路連線失敗，請稍後再試";
+    }
+
+    return error.message ?? fallback;
   }
 
   if (error instanceof Error) {

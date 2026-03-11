@@ -1,4 +1,6 @@
 import { AxiosHeaders, type AxiosRequestHeaders } from "axios";
+import { getApiErrorMessage } from "@/lib/api/errors";
+import { endClientSession } from "@/lib/auth/end-client-session";
 import { rawHttp } from "@/lib/api/client";
 import { useAuthStore } from "@/store/auth-store";
 import type { RefreshResponse } from "@/types/api";
@@ -15,15 +17,17 @@ export function getAccessToken() {
   return useAuthStore.getState().accessToken;
 }
 
-export function clearAuthSession() {
-  useAuthStore.getState().logout();
+export function clearAuthSession(message = "登入已失效，請重新登入") {
+  void endClientSession({
+    reason: "expired",
+    message,
+  });
 }
 
 async function requestAccessTokenRefresh() {
-  const { refreshToken, logout, updateAccessToken } = useAuthStore.getState();
+  const { refreshToken, updateAccessToken } = useAuthStore.getState();
   if (!refreshToken) {
-    logout();
-    throw new Error("Missing refresh token");
+    throw new Error("登入已失效，請重新登入");
   }
 
   const response = await rawHttp.post<RefreshResponse>("/auth/refresh", {
@@ -36,11 +40,15 @@ async function requestAccessTokenRefresh() {
 
 export async function refreshAccessToken() {
   if (!refreshPromise) {
-    refreshPromise = requestAccessTokenRefresh().finally(() => {
-      refreshPromise = null;
-    });
+    refreshPromise = requestAccessTokenRefresh()
+      .catch((error) => {
+        clearAuthSession(getApiErrorMessage(error, "登入已失效，請重新登入"));
+        return Promise.reject(error);
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
   }
 
   return refreshPromise;
 }
-

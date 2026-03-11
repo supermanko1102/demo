@@ -135,11 +135,12 @@ components/
     hooks/
       use-users-query.ts
       use-users-filters.ts
-      use-users-page-state.ts
       use-users-autocomplete.ts
     model.ts           # filter schema / query key builder
     users-agent-card.tsx
     users-agent-chart.tsx
+    users-autocomplete-field.tsx
+    users-filters-sheet.tsx
     users-table-card.tsx
   ui/* (shadcn components)
 hooks/
@@ -147,12 +148,15 @@ hooks/
   use-auth-redirect.ts
   use-root-redirect.ts
 lib/
+  auth/
+    end-client-session.ts
   api/
     client.ts
     http.ts
     token-manager.ts
     services.ts
     errors.ts
+  query-client.ts
 store/
   auth-store.ts
 types/
@@ -180,8 +184,11 @@ agent-backend/
 - `lib/api/services.ts`
   - 對外暴露 `loginApi`, `getUsersApi`, `askAgentApi` 等 API 呼叫 function
   - `askAgentApi` 會在 `401 + TOKEN_EXPIRED` 時 refresh 並重試一次
+  - agent 走本地 `agent-backend`，因此不共用 `http.ts` 的 axios client
 - `lib/api/errors.ts`
   - `getApiErrorMessage`：統一解析 API error message
+- `lib/auth/end-client-session.ts`
+  - 集中處理前端 logout / session 過期收尾（清 store、清 query cache、導回登入頁）
 
 ## Token Refresh 流程
 
@@ -202,7 +209,7 @@ agent-backend/
 ## UX / RWD 重點
 
 - shadcn dashboard 風格：sidebar + header + cards + table
-- Filter 放在 table header 右側按鈕，點擊展開側邊 Sheet（不遮蓋資料）
+- Filter UI 抽成獨立 `users-filters-sheet.tsx`，讓 table 與 filter responsibilities 分離
 - Autocomplete 搜尋建議：輸入 2 字元後自動防抖撈取，選取後自動套用篩選
 - Active filter 數量 badge，讓使用者知道目前有幾個條件生效
 - table 狀態完整：loading / error / empty / success
