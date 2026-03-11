@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { getApiErrorMessage } from "@/lib/api/services";
+import { getApiErrorMessage } from "@/lib/api/errors";
+import { getInitials } from "@/lib/utils";
 import type { ApiUser, UsersResponse } from "@/types/api";
 
 interface UsersTableCardProps {
@@ -19,13 +20,7 @@ interface UsersTableCardProps {
   onNextPage: () => void;
 }
 
-function getInitials(name: string) {
-  return name
-    .split(" ")
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
-}
+
 
 function formatDate(input: string) {
   const parsed = new Date(input);

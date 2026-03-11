@@ -31,19 +31,20 @@ const defaultUser = {
   avatar: "https://api.dicebear.com/9.x/glass/svg?seed=IonexAdmin",
 }
 
+/** 導航定義。新增頁面只需在這裡加項目，不需要修改 AppSidebar 本身。 */
+const NAV_ITEMS = [
+  { title: "Users", url: "/users", Icon: UsersIcon },
+] as const
+
 export function AppSidebar({ user = defaultUser, onLogout, ...props }: AppSidebarProps) {
   const pathname = usePathname()
-  const navMain = [
-    {
-      title: "Users",
-      url: "/users",
-      icon: (
-        <UsersIcon
-        />
-      ),
-      isActive: pathname === "/users",
-    },
-  ]
+
+  const navMain = NAV_ITEMS.map((item) => ({
+    title: item.title,
+    url: item.url,
+    icon: <item.Icon />,
+    isActive: pathname === item.url,
+  }))
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -71,3 +72,4 @@ export function AppSidebar({ user = defaultUser, onLogout, ...props }: AppSideba
     </Sidebar>
   )
 }
+

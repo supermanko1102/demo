@@ -5,20 +5,15 @@ import { useMutation } from "@tanstack/react-query";
 import { Loader2, LockKeyhole } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { loginSchema, type LoginFormValues } from "@/components/form/model";
 import { useAuthRedirect } from "@/hooks/use-auth-redirect";
-import { loginApi, getApiErrorMessage } from "@/lib/api/services";
+import { getApiErrorMessage } from "@/lib/api/errors";
+import { loginApi } from "@/lib/api/services";
 import { useAuthStore } from "@/store/auth-store";
 
-const loginSchema = z.object({
-  username: z.string().trim().min(1, "請輸入帳號"),
-  password: z.string().min(1, "請輸入密碼"),
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
   const router = useRouter();

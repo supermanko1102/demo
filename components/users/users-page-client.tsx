@@ -2,11 +2,10 @@
 
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { type CSSProperties, useState } from "react";
+import { type CSSProperties } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
-import { useUsersFilters } from "@/components/users/hooks/use-users-filters";
+import { useUsersPageState } from "@/components/users/hooks/use-users-page-state";
 import { useUsersQuery } from "@/components/users/hooks/use-users-query";
-import { USERS_PAGINATION_DEFAULTS, type UsersAppliedFilters } from "@/components/users/model";
 import { UsersFiltersCard } from "@/components/users/users-filters-card";
 import { UsersOverviewCards } from "@/components/users/users-overview-cards";
 import { UsersTableCard } from "@/components/users/users-table-card";
@@ -24,28 +23,14 @@ export function UsersPageClient() {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
 
-  const [page, setPage] = useState(USERS_PAGINATION_DEFAULTS.page);
-  const [limit, setLimit] = useState(USERS_PAGINATION_DEFAULTS.limit);
-  const [filters, setFilters] = useState<UsersAppliedFilters>({});
+  const { page, limit, filters, setPage, control, setValue, errors, submitFilters, resetFilters } =
+    useUsersPageState();
 
   const { usersQuery, pagination, totalPages } = useUsersQuery({
     page,
     limit,
     filters,
     enabled: hydrated && isAuthenticated,
-  });
-
-  const { control, setValue, errors, submitFilters, resetFilters } = useUsersFilters({
-    onApply: ({ filters: nextFilters, limit: nextLimit }) => {
-      setPage(1);
-      setLimit(nextLimit);
-      setFilters(nextFilters);
-    },
-    onReset: ({ filters: nextFilters, limit: nextLimit }) => {
-      setPage(1);
-      setLimit(nextLimit);
-      setFilters(nextFilters);
-    },
   });
 
   const handleLogout = () => {
@@ -59,6 +44,7 @@ export function UsersPageClient() {
 
   if (!hydrated || !isAuthenticated) {
     return (
+
       <main className="flex min-h-screen items-center justify-center bg-background">
         <div className="flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600">
           <Loader2 className="h-4 w-4 animate-spin" />
