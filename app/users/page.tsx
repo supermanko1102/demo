@@ -4,7 +4,11 @@ import { Loader2 } from "lucide-react";
 import { type CSSProperties, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { useUsersFilters } from "@/components/users/hooks/use-users-filters";
-import { USERS_PAGINATION_DEFAULTS, type UsersAppliedFilters } from "@/components/users/model";
+import {
+  USERS_PAGINATION_DEFAULTS,
+  USERS_QUERY_KEY,
+  type UsersAppliedFilters,
+} from "@/components/users/model";
 import { UsersAgentCard } from "@/components/users/users-agent-card";
 import { useUsersQuery } from "@/components/users/hooks/use-users-query";
 import { UsersTableCard } from "@/components/users/users-table-card";
@@ -80,7 +84,7 @@ export default function UsersPage() {
         variant="inset"
       />
       <SidebarInset>
-        <SiteHeader title="Users" />
+        <SiteHeader refreshQueryKey={[USERS_QUERY_KEY]} title="Users" />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">

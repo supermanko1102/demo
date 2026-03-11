@@ -1,32 +1,21 @@
-# Ionex Admin Console (Frontend Interview)
+# Ionex Admin Console
 
-一個使用 `Next.js + React + TypeScript` 的後台管理系統範例，完成以下核心需求：
+一個用 `Next.js + TypeScript` 做的後台 demo，重點是：
 
-- 使用者登入（保存 Access / Refresh Token）
-- 受保護的使用者列表頁
-- 分頁與篩選
-- Access Token 過期後自動 refresh 並重試原請求
+- 登入後進入受保護的 `/users`
+- Access token 過期時自動 refresh 並重試請求
 - 重新整理後維持登入狀態
-- RWD（桌機 sidebar + 行動裝置抽屜）
+- 使用者列表支援分頁、篩選、autocomplete
+- 右下角有可選的 AI Assistant（需要額外啟動 agent backend）
 
 ## Demo 帳密
 
 - `username`: `admin`
 - `password`: `password123`
 
-## 技術棧
-
-- Framework: `Next.js (App Router)` + `React 19`
-- Language: `TypeScript`
-- UI: `shadcn/ui` + Tailwind CSS
-- State: `zustand`（含 persist）
-- Server State: `@tanstack/react-query`
-- Form: `react-hook-form` + `zod`
-- HTTP: `axios`（含攔截器）
-
 ## 快速開始
 
-本專案目前使用 `pnpm-lock.yaml`，建議使用 pnpm。
+安裝並啟動前端：
 
 ```bash
 pnpm install
@@ -35,18 +24,9 @@ pnpm dev
 
 開啟 [http://localhost:3000](http://localhost:3000)。
 
-### 完整 Demo（前端 + Agent）
+## 可選：啟動 AI Assistant Backend
 
-建議使用兩個 terminal：
-
-Terminal A（前端）：
-
-```bash
-cd /Users/alex/demo
-pnpm dev
-```
-
-Terminal B（Agent backend）：
+只有 `/users` 頁右下角的 AI Assistant 需要這個服務；前端主流程不需要。
 
 ```bash
 cd /Users/alex/demo/agent-backend
@@ -55,55 +35,15 @@ cp .env.sample .env
 pnpm dev
 ```
 
-其他常用指令：
+或直接在 root：
 
 ```bash
-pnpm lint
-pnpm build
-pnpm start
-```
-
-## 啟動 Agent Backend（Genkit）
-
-1. 安裝 backend 依賴並建立環境變數檔：
-
-```bash
-cd /Users/alex/demo/agent-backend
-pnpm install
-cp .env.sample .env
-```
-
-2. 編輯 `/Users/alex/demo/agent-backend/.env`，至少填入：
-
-```env
-GEMINI_API_KEY=你的_key
-```
-
-也可改用 shell 變數：`export GEMINI_API_KEY=你的_key`
-
-3. 啟動 backend（擇一）：
-
-```bash
-cd /Users/alex/demo/agent-backend
-pnpm dev
-```
-
-或在專案根目錄：
-
-```bash
-cd /Users/alex/demo
 pnpm dev:agent
 ```
 
-4. 健康檢查：
-
-```bash
-curl -sS http://localhost:3400/health
-```
+詳細設定看 [`agent-backend/README.md`](/Users/alex/demo/agent-backend/README.md)。
 
 ## 環境變數
-
-可選，未設定時會使用預設 API URL。
 
 `.env.local`
 
@@ -112,125 +52,35 @@ NEXT_PUBLIC_API_BASE_URL=https://lbbj5pioquwxdexqmcnwaxrpce0lcoqx.lambda-url.ap-
 NEXT_PUBLIC_AGENT_BACKEND_URL=http://localhost:3400
 ```
 
-`NEXT_PUBLIC_AGENT_BACKEND_URL` 用於 `/users` 頁面的 AI Assistant（會呼叫 `agent-backend` 的 `POST /chat`，可查總人數/active、回傳 pie/line chart 資料，並含 injection 防護）。
-
 ## 路由
 
 - `/login`: 登入頁
-- `/users`: 後台主頁（需登入）
-- `/`: 依登入狀態自動導向 `/login` 或 `/users`
+- `/users`: 後台主頁
+- `/`: 依登入狀態自動導向
 
-## 專案結構（重點）
+## 架構重點
 
-```txt
-app/
-  login/page.tsx
-  users/page.tsx
-  providers.tsx
-components/
-  form/
-    model.ts          # loginSchema / LoginFormValues
-    login-form.tsx
-  users/
-    hooks/
-      use-users-query.ts
-      use-users-filters.ts
-      use-users-autocomplete.ts
-    model.ts           # filter schema / query key builder
-    users-agent-card.tsx
-    users-agent-chart.tsx
-    users-autocomplete-field.tsx
-    users-filters-sheet.tsx
-    users-table-card.tsx
-  ui/* (shadcn components)
-hooks/
-  use-auth-session.ts
-  use-auth-redirect.ts
-  use-root-redirect.ts
-lib/
-  auth/
-    end-client-session.ts
-  api/
-    client.ts
-    http.ts
-    token-manager.ts
-    services.ts
-    errors.ts
-  query-client.ts
-store/
-  auth-store.ts
-types/
-  api.ts
-agent-backend/
-  src/
-    server.mjs
-    agent/
-      schemas.mjs
-      logic.mjs
-      build-flow.mjs
+- `app/`: App Router 頁面與 providers
+- `components/users/`: users 頁面的 UI、filters、query hooks
+- `lib/api/`: axios client、auth header、token refresh、API services
+- `lib/auth/`: 前端登出與 session 結束流程
+- `store/auth-store.ts`: auth 狀態與 localStorage persist
+- `agent-backend/`: 獨立的 AI assistant backend
+
+## Token 流程
+
+1. 登入後把 access token / refresh token 存進 zustand persist store
+2. API 請求自動帶 `Authorization`
+3. 若回傳 `401 + TOKEN_EXPIRED`，前端會自動 refresh token
+4. refresh 成功後重試原請求
+5. refresh 失敗則清空 session 並導回 `/login`
+
+## 常用指令
+
+```bash
+pnpm dev
+pnpm dev:agent
+pnpm lint
+pnpm build
+pnpm start
 ```
-
-## API 封裝設計
-
-- `lib/api/client.ts`
-  - 建立 `rawHttp`（不帶 auth，用於 login / refresh）
-- `lib/api/http.ts`
-  - 建立 `http`（帶 auth）
-  - request interceptor：自動加 `Authorization`
-  - response interceptor：攔截 `401 + TOKEN_EXPIRED`
-- `lib/api/token-manager.ts`
-  - 管理 refresh promise（避免多請求同時 refresh）
-  - refresh 成功後更新 store 的 access token
-- `lib/api/services.ts`
-  - 對外暴露 `loginApi`, `getUsersApi`, `askAgentApi` 等 API 呼叫 function
-  - `askAgentApi` 會在 `401 + TOKEN_EXPIRED` 時 refresh 並重試一次
-  - agent 走本地 `agent-backend`，因此不共用 `http.ts` 的 axios client
-- `lib/api/errors.ts`
-  - `getApiErrorMessage`：統一解析 API error message
-- `lib/auth/end-client-session.ts`
-  - 集中處理前端 logout / session 過期收尾（清 store、清 query cache、導回登入頁）
-
-## Token Refresh 流程
-
-1. 呼叫 `/api/users` 或 agent `/chat` 時若 access token 過期，API 回傳 `401` + `TOKEN_EXPIRED`
-2. 前端觸發 `refreshAccessToken()`
-3. 以 refresh token 呼叫 `/auth/refresh` 取得新 access token
-4. 更新 store 後自動重試原本失敗的請求
-5. 若 refresh 失敗，清除登入狀態並導向登入頁
-
-## 狀態管理與登入持久化
-
-- `zustand` + `persist(localStorage)` 儲存：
-  - `accessToken`
-  - `refreshToken`
-  - `user`
-- `hydrated` flag 確保 rehydrate 後再做路由判斷，避免閃跳
-
-## UX / RWD 重點
-
-- shadcn dashboard 風格：sidebar + header + cards + table
-- Filter UI 抽成獨立 `users-filters-sheet.tsx`，讓 table 與 filter responsibilities 分離
-- Autocomplete 搜尋建議：輸入 2 字元後自動防抖撈取，選取後自動套用篩選
-- Active filter 數量 badge，讓使用者知道目前有幾個條件生效
-- table 狀態完整：loading / error / empty / success
-- 分頁使用 `keepPreviousData`，翻頁體驗較平順
-- 行動裝置 sidebar 自動切為 drawer
-
-## AI Assistant 範例語句
-
-- `後台總共幾個人？active 有幾個？`
-- `搜尋 alice`
-- `搜尋 alice@ionex.local`
-- `用 pie chart 畫 active/inactive 比例`
-- `用 line chart 顯示 total/active/inactive`
-
-## 需求對應
-
-- [x] 登入 + token 儲存
-- [x] 未登入不可看列表
-- [x] 使用者列表（含頭像、狀態）
-- [x] 分頁
-- [x] Access token 過期自動 refresh + retry
-- [x] 重新整理後維持登入
-- [x] TypeScript + React
-- [x] shadcn + zustand + TanStack Query

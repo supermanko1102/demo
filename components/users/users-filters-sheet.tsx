@@ -48,7 +48,7 @@ export function UsersFiltersSheet({
         <SheetHeader>
           <SheetTitle>篩選條件</SheetTitle>
           <SheetDescription>
-            條件變更後自動套用，選取建議項目或按 Enter 觸發搜尋。
+            選取建議項目、切換狀態或按 Enter 後會套用條件。
           </SheetDescription>
         </SheetHeader>
 

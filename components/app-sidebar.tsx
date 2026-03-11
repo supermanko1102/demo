@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import { usePathname } from "next/navigation"
 
 import { NavMain } from "@/components/nav-main"
@@ -55,10 +56,10 @@ export function AppSidebar({ user = defaultUser, onLogout, ...props }: AppSideba
               asChild
               className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
-              <a href="/users">
+              <Link href="/users">
                 <CommandIcon className="size-5!" />
                 <span className="text-base font-semibold">Ionex Console</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -72,4 +73,3 @@ export function AppSidebar({ user = defaultUser, onLogout, ...props }: AppSideba
     </Sidebar>
   )
 }
-

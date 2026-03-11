@@ -1,7 +1,7 @@
 "use client"
 
 import { RefreshCw } from "lucide-react"
-import { useQueryClient } from "@tanstack/react-query"
+import { type QueryKey, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import {
   Breadcrumb,
@@ -15,12 +15,18 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 
 interface SiteHeaderProps {
   title?: string
+  refreshQueryKey?: QueryKey
 }
 
-export function SiteHeader({ title = "Dashboard" }: SiteHeaderProps) {
+export function SiteHeader({ title = "Dashboard", refreshQueryKey }: SiteHeaderProps) {
   const queryClient = useQueryClient()
 
   const handleRefresh = () => {
+    if (refreshQueryKey) {
+      void queryClient.invalidateQueries({ queryKey: refreshQueryKey })
+      return
+    }
+
     void queryClient.invalidateQueries()
   }
 
@@ -51,4 +57,3 @@ export function SiteHeader({ title = "Dashboard" }: SiteHeaderProps) {
     </header>
   )
 }
-
