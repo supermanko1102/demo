@@ -1,0 +1,14 @@
+{
+  "name": "agent-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file=.env src/server.mjs",
+    "start": "node --env-file=.env src/server.mjs"
+  },
+  "dependencies": {
+    "@genkit-ai/google-genai": "^1.29.0",
+    "genkit": "^1.29.0",
+    "zod": "^4.3.6"
+  }
+}

@@ -35,12 +35,70 @@ pnpm dev
 
 開啟 [http://localhost:3000](http://localhost:3000)。
 
+### 完整 Demo（前端 + Agent）
+
+建議使用兩個 terminal：
+
+Terminal A（前端）：
+
+```bash
+cd /Users/alex/demo
+pnpm dev
+```
+
+Terminal B（Agent backend）：
+
+```bash
+cd /Users/alex/demo/agent-backend
+pnpm install
+cp .env.sample .env
+pnpm dev
+```
+
 其他常用指令：
 
 ```bash
 pnpm lint
 pnpm build
 pnpm start
+```
+
+## 啟動 Agent Backend（Genkit）
+
+1. 安裝 backend 依賴並建立環境變數檔：
+
+```bash
+cd /Users/alex/demo/agent-backend
+pnpm install
+cp .env.sample .env
+```
+
+2. 編輯 `/Users/alex/demo/agent-backend/.env`，至少填入：
+
+```env
+GEMINI_API_KEY=你的_key
+```
+
+也可改用 shell 變數：`export GEMINI_API_KEY=你的_key`
+
+3. 啟動 backend（擇一）：
+
+```bash
+cd /Users/alex/demo/agent-backend
+pnpm dev
+```
+
+或在專案根目錄：
+
+```bash
+cd /Users/alex/demo
+pnpm dev:agent
+```
+
+4. 健康檢查：
+
+```bash
+curl -sS http://localhost:3400/health
 ```
 
 ## 環境變數
@@ -51,7 +109,10 @@ pnpm start
 
 ```env
 NEXT_PUBLIC_API_BASE_URL=https://lbbj5pioquwxdexqmcnwaxrpce0lcoqx.lambda-url.ap-southeast-1.on.aws
+NEXT_PUBLIC_AGENT_BACKEND_URL=http://localhost:3400
 ```
+
+`NEXT_PUBLIC_AGENT_BACKEND_URL` 用於 `/users` 頁面的 AI Assistant（會呼叫 `agent-backend` 的 `POST /chat`，可查總人數/active、回傳 pie/line chart 資料，並含 injection 防護）。
 
 ## 路由
 
@@ -77,6 +138,8 @@ components/
       use-users-page-state.ts
       use-users-autocomplete.ts
     model.ts           # filter schema / query key builder
+    users-agent-card.tsx
+    users-agent-chart.tsx
     users-page-client.tsx
     users-table-card.tsx
   ui/* (shadcn components)
@@ -95,6 +158,13 @@ store/
   auth-store.ts
 types/
   api.ts
+agent-backend/
+  src/
+    server.mjs
+    agent/
+      schemas.mjs
+      logic.mjs
+      build-flow.mjs
 ```
 
 ## API 封裝設計
@@ -109,7 +179,7 @@ types/
   - 管理 refresh promise（避免多請求同時 refresh）
   - refresh 成功後更新 store 的 access token
 - `lib/api/services.ts`
-  - 對外暴露 `loginApi`, `getUsersApi` 等 API 呼叫 function
+  - 對外暴露 `loginApi`, `getUsersApi`, `askAgentApi` 等 API 呼叫 function
 - `lib/api/errors.ts`
   - `getApiErrorMessage`：統一解析 API error message
 
@@ -139,6 +209,14 @@ types/
 - 分頁使用 `keepPreviousData`，翻頁體驗較平順
 - 行動裝置 sidebar 自動切為 drawer
 
+## AI Assistant 範例語句
+
+- `後台總共幾個人？active 有幾個？`
+- `搜尋 alice`
+- `搜尋 alice@ionex.local`
+- `用 pie chart 畫 active/inactive 比例`
+- `用 line chart 顯示 total/active/inactive`
+
 ## 需求對應
 
 - [x] 登入 + token 儲存
@@ -149,9 +227,3 @@ types/
 - [x] 重新整理後維持登入
 - [x] TypeScript + React
 - [x] shadcn + zustand + TanStack Query
-
-## 可再加強項目
-
-- URL 同步篩選條件（可分享查詢狀態）
-- 自動化測試（auth refresh、filters、store hydrate）
-- 更完整 RBAC / 權限模型
