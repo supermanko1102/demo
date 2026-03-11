@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { type CSSProperties } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { useUsersPageState } from "@/components/users/hooks/use-users-page-state";
+import { UsersAgentCard } from "@/components/users/users-agent-card";
 import { useUsersQuery } from "@/components/users/hooks/use-users-query";
 import { UsersTableCard } from "@/components/users/users-table-card";
 import { SiteHeader } from "@/components/site-header";
@@ -74,20 +75,23 @@ export function UsersPageClient() {
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               <div className="px-4 lg:px-6">
-                <UsersTableCard
-                  activeFilterCount={activeFilterCount}
-                  control={control}
-                  errors={errors}
-                  onFilterReset={resetFilters}
-                  onFilterSubmit={submitFilters}
-                  onNextPage={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-                  onPreviousPage={() => setPage((prev) => Math.max(prev - 1, 1))}
-                  page={page}
-                  setValue={setValue}
-                  total={pagination?.total ?? 0}
-                  totalPages={totalPages}
-                  usersQuery={usersQuery}
-                />
+                <div className="space-y-4">
+                  <UsersTableCard
+                    activeFilterCount={activeFilterCount}
+                    control={control}
+                    errors={errors}
+                    onFilterReset={resetFilters}
+                    onFilterSubmit={submitFilters}
+                    onNextPage={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+                    onPreviousPage={() => setPage((prev) => Math.max(prev - 1, 1))}
+                    page={page}
+                    setValue={setValue}
+                    total={pagination?.total ?? 0}
+                    totalPages={totalPages}
+                    usersQuery={usersQuery}
+                  />
+                  <UsersAgentCard />
+                </div>
               </div>
             </div>
           </div>

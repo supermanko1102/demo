@@ -43,6 +43,44 @@ pnpm build
 pnpm start
 ```
 
+## 啟動 Agent Backend（Genkit）
+
+1. 安裝 backend 依賴並建立環境變數檔：
+
+```bash
+cd /Users/alex/demo/agent-backend
+pnpm install
+cp .env.example .env
+```
+
+2. 編輯 `/Users/alex/demo/agent-backend/.env`，至少填入：
+
+```env
+GEMINI_API_KEY=你的_key
+```
+
+也可改用 shell 變數：`export GEMINI_API_KEY=你的_key`
+
+3. 啟動 backend（擇一）：
+
+```bash
+cd /Users/alex/demo/agent-backend
+pnpm dev
+```
+
+或在專案根目錄：
+
+```bash
+cd /Users/alex/demo
+pnpm dev:agent
+```
+
+4. 健康檢查：
+
+```bash
+curl -sS http://localhost:3400/health
+```
+
 ## 環境變數
 
 可選，未設定時會使用預設 API URL。
@@ -51,7 +89,10 @@ pnpm start
 
 ```env
 NEXT_PUBLIC_API_BASE_URL=https://lbbj5pioquwxdexqmcnwaxrpce0lcoqx.lambda-url.ap-southeast-1.on.aws
+NEXT_PUBLIC_AGENT_BACKEND_URL=http://localhost:3400
 ```
+
+`NEXT_PUBLIC_AGENT_BACKEND_URL` 用於 `/users` 頁面的 AI Assistant（會呼叫 `agent-backend` 的 `POST /chat`，可查總人數/active 並含 injection 防護）。
 
 ## 路由
 

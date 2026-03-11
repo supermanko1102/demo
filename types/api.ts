@@ -49,3 +49,11 @@ export interface ApiErrorPayload {
   message?: string;
 }
 
+export interface AgentChatRequest {
+  message: string;
+  timezone?: string;
+}
+
+export interface AgentChatResponse {
+  reply: string;
+}
