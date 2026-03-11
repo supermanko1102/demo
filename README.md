@@ -92,7 +92,7 @@ NEXT_PUBLIC_API_BASE_URL=https://lbbj5pioquwxdexqmcnwaxrpce0lcoqx.lambda-url.ap-
 NEXT_PUBLIC_AGENT_BACKEND_URL=http://localhost:3400
 ```
 
-`NEXT_PUBLIC_AGENT_BACKEND_URL` 用於 `/users` 頁面的 AI Assistant（會呼叫 `agent-backend` 的 `POST /chat`，可查總人數/active 並含 injection 防護）。
+`NEXT_PUBLIC_AGENT_BACKEND_URL` 用於 `/users` 頁面的 AI Assistant（會呼叫 `agent-backend` 的 `POST /chat`，可查總人數/active、回傳 pie/line chart 資料，並含 injection 防護）。
 
 ## 路由
 

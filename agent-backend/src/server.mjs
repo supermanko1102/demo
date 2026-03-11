@@ -19,6 +19,18 @@ const chatInputSchema = z.object({
   timezone: z.string().optional(),
 });
 
+const chartPayloadSchema = z.object({
+  type: z.enum(["pie", "line"]),
+  title: z.string(),
+  labels: z.array(z.string()),
+  values: z.array(z.number()),
+});
+
+const chatOutputSchema = z.object({
+  reply: z.string(),
+  chart: chartPayloadSchema.optional(),
+});
+
 const upstreamUserSchema = z
   .object({
     id: z.number(),
@@ -93,6 +105,30 @@ function findPromptInjectionReason(message) {
   return null;
 }
 
+function detectRequestedChartType(message) {
+  // line chart 優先偵測
+  if (/(line\s*chart|折線圖?|趨勢圖?)/i.test(message)) {
+    return "line";
+  }
+  // pie chart 偵測（包含 piechart 連字、pie chart 分字、圓餅等）
+  if (/(pie\s*chart|piechart|圓餅圖?|比例圖?|占比)/i.test(message)) {
+    return "pie";
+  }
+  // 純 line 關鍵字（避免誤判放後面）
+  if (/(\bline\b|折線|趨勢)/i.test(message)) {
+    return "line";
+  }
+  // 純 pie 關鍵字
+  if (/(\bpie\b|圓餅|比例|占比)/i.test(message)) {
+    return "pie";
+  }
+  // 泛用圖表關鍵字 → 預設 pie
+  if (/(圖表|畫圖|畫.*圖|圖|\bchart\b|echart)/i.test(message)) {
+    return "pie";
+  }
+  return null;
+}
+
 function readAccessTokenFromContext(context) {
   const token = typeof context?.accessToken === "string" ? context.accessToken.trim() : "";
   return token || null;
@@ -104,6 +140,114 @@ function requireAccessToken(context) {
     throw new Error("需要登入後才能查詢後台使用者資料。");
   }
   return token;
+}
+
+async function computeUserStats(accessToken) {
+  const users = await fetchAllUsers(accessToken);
+
+  let active = 0;
+  let inactive = 0;
+  let unknown = 0;
+
+  for (const user of users) {
+    const status = normalizeUserStatus(user.status);
+    if (status === "active") {
+      active += 1;
+    } else if (status === "inactive") {
+      inactive += 1;
+    } else {
+      unknown += 1;
+    }
+  }
+
+  return {
+    total: users.length,
+    active,
+    inactive,
+    unknown,
+  };
+}
+
+function buildChartPayload(chartType, stats) {
+  if (chartType === "line") {
+    return {
+      type: "line",
+      title: "Users Summary",
+      labels: ["Total", "Active", "Inactive", "Unknown"],
+      values: [stats.total, stats.active, stats.inactive, stats.unknown],
+    };
+  }
+
+  return {
+    type: "pie",
+    title: "Users Status Distribution",
+    labels: ["Active", "Inactive", "Unknown"],
+    values: [stats.active, stats.inactive, stats.unknown],
+  };
+}
+
+function formatPercent(value, total) {
+  if (total <= 0) {
+    return "0.0";
+  }
+  return ((value / total) * 100).toFixed(1);
+}
+
+function buildStatsSummary(stats) {
+  return (
+    `總人數：${stats.total}\n` +
+    `Active：${stats.active}（${formatPercent(stats.active, stats.total)}%）\n` +
+    `Inactive：${stats.inactive}（${formatPercent(stats.inactive, stats.total)}%）\n` +
+    `Unknown：${stats.unknown}（${formatPercent(stats.unknown, stats.total)}%）`
+  );
+}
+
+function extractToolArtifacts(messages) {
+  let chart = null;
+  let chartSummary = null;
+  let stats = null;
+
+  for (const message of messages ?? []) {
+    if (message?.role !== "tool" || !Array.isArray(message.content)) {
+      continue;
+    }
+
+    for (const item of message.content) {
+      const toolResponse = item?.toolResponse;
+      if (!toolResponse?.name) {
+        continue;
+      }
+
+      if (toolResponse.name === "buildUsersStatusChart") {
+        const output = toolResponse.output;
+        const parsedChart = chartPayloadSchema.safeParse(output?.chart);
+        if (parsedChart.success) {
+          chart = parsedChart.data;
+        }
+        if (typeof output?.summary === "string" && output.summary.trim()) {
+          chartSummary = output.summary.trim();
+        }
+        if (output?.stats) {
+          stats = output.stats;
+        }
+      }
+
+      if (toolResponse.name === "getUserStats") {
+        const output = toolResponse.output;
+        if (
+          output &&
+          typeof output.total === "number" &&
+          typeof output.active === "number" &&
+          typeof output.inactive === "number" &&
+          typeof output.unknown === "number"
+        ) {
+          stats = output;
+        }
+      }
+    }
+  }
+
+  return { chart, chartSummary, stats };
 }
 
 async function fetchUsersPage(accessToken, page, limit) {
@@ -229,29 +373,7 @@ const getUserStatsTool = ai.defineTool(
   },
   async (_, { context }) => {
     const accessToken = requireAccessToken(context);
-    const users = await fetchAllUsers(accessToken);
-
-    let active = 0;
-    let inactive = 0;
-    let unknown = 0;
-
-    for (const user of users) {
-      const status = normalizeUserStatus(user.status);
-      if (status === "active") {
-        active += 1;
-      } else if (status === "inactive") {
-        inactive += 1;
-      } else {
-        unknown += 1;
-      }
-    }
-
-    return {
-      total: users.length,
-      active,
-      inactive,
-      unknown,
-    };
+    return computeUserStats(accessToken);
   }
 );
 
@@ -301,13 +423,43 @@ const searchUsersTool = ai.defineTool(
   }
 );
 
+const buildUsersStatusChartTool = ai.defineTool(
+  {
+    name: "buildUsersStatusChart",
+    description: "Build pie or line chart payload from real backend user stats.",
+    inputSchema: z.object({
+      chartType: z.enum(["pie", "line"]).default("pie"),
+    }),
+    outputSchema: z.object({
+      chart: chartPayloadSchema,
+      stats: z.object({
+        total: z.number(),
+        active: z.number(),
+        inactive: z.number(),
+        unknown: z.number(),
+      }),
+      summary: z.string(),
+    }),
+  },
+  async ({ chartType }, { context }) => {
+    const accessToken = requireAccessToken(context);
+    const stats = await computeUserStats(accessToken);
+    const chart = buildChartPayload(chartType, stats);
+    const summary = buildStatsSummary(stats);
+
+    return {
+      chart,
+      stats,
+      summary,
+    };
+  }
+);
+
 const agentChatFlow = ai.defineFlow(
   {
     name: "agentChatFlow",
     inputSchema: chatInputSchema,
-    outputSchema: z.object({
-      reply: z.string(),
-    }),
+    outputSchema: chatOutputSchema,
   },
   async ({ message, timezone }, { context }) => {
     const injectionReason = findPromptInjectionReason(message);
@@ -318,9 +470,15 @@ const agentChatFlow = ai.defineFlow(
     }
 
     const accessToken = readAccessTokenFromContext(context);
+    const requestedChartType = detectRequestedChartType(message);
     if (!accessToken && needsUserData(message)) {
       return {
         reply: "這個問題需要登入權限才能讀取後台資料，請先登入後再詢問。",
+      };
+    }
+    if (!accessToken && requestedChartType) {
+      return {
+        reply: "要產生圖表需要登入權限才能讀取後台資料，請先登入後再詢問。",
       };
     }
 
@@ -336,19 +494,44 @@ const agentChatFlow = ai.defineFlow(
 1. 問到時間時優先呼叫 getCurrentTime。
 2. 問到人數（總人數、active、inactive）時優先呼叫 getUserStats。
 3. 問到特定使用者時呼叫 searchUsers。
-4. 回答使用繁體中文、精簡列點。
+4. 問到圖表時呼叫 buildUsersStatusChart（chartType 依照使用者指定 pie 或 line）。
+5. 回答使用繁體中文、精簡列點。
 
 使用者時區提示：${timezone ?? DEFAULT_TIMEZONE}
 使用者問題：${message}
 `;
 
-    const { text } = await ai.generate({
+    const { text, messages } = await ai.generate({
       prompt,
-      tools: [getCurrentTimeTool, getUserStatsTool, searchUsersTool],
+      tools: [getCurrentTimeTool, getUserStatsTool, searchUsersTool, buildUsersStatusChartTool],
     });
 
+    let reply = text?.trim() || "目前沒有可回覆內容。";
+    let chart;
+
+    if (requestedChartType) {
+      const artifacts = extractToolArtifacts(messages);
+      chart = artifacts.chart;
+
+      if (!chart && accessToken) {
+        const stats = artifacts.stats ?? (await computeUserStats(accessToken));
+        chart = buildChartPayload(requestedChartType, stats);
+      }
+
+      const summary =
+        artifacts.chartSummary ||
+        (artifacts.stats ? buildStatsSummary(artifacts.stats) : null);
+
+      if (summary) {
+        reply = `已產生 ${requestedChartType.toUpperCase()} 圖表。\n${summary}`;
+      } else if (!reply || /無法|不能|不支援/.test(reply)) {
+        reply = `已產生 ${requestedChartType.toUpperCase()} 圖表。`;
+      }
+    }
+
     return {
-      reply: text?.trim() || "目前沒有可回覆內容。",
+      reply,
+      chart,
     };
   }
 );

@@ -46,5 +46,16 @@ export async function askAgentApi(payload: AgentChatRequest, accessToken?: strin
     throw new Error("Agent 回傳格式錯誤");
   }
 
+  if (
+    "chart" in data &&
+    data.chart &&
+    (typeof data.chart !== "object" ||
+      !("type" in data.chart) ||
+      !("labels" in data.chart) ||
+      !("values" in data.chart))
+  ) {
+    throw new Error("Agent 圖表格式錯誤");
+  }
+
   return data;
 }

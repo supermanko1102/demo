@@ -54,6 +54,14 @@ export interface AgentChatRequest {
   timezone?: string;
 }
 
+export interface AgentChartPayload {
+  type: "pie" | "line";
+  title: string;
+  labels: string[];
+  values: number[];
+}
+
 export interface AgentChatResponse {
   reply: string;
+  chart?: AgentChartPayload;
 }

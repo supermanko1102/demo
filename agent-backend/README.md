@@ -11,6 +11,7 @@
 - 查詢後台使用者總數 / active / inactive（讀取真實 `/api/users`）
 - 搜尋特定使用者
 - prompt injection 防護（常見越權/洩密/注入語句會拒絕）
+- 回傳圖表資料（`pie` / `line`）給前端 ECharts 渲染
 
 ## API
 
@@ -68,3 +69,12 @@ curl -sS -X POST http://localhost:3400/chat \
 ```
 
 `Authorization` 可省略，但查詢後台使用者資料時會需要登入 token。
+
+圖表範例：
+
+```bash
+curl -sS -X POST http://localhost:3400/chat \
+  -H 'Authorization: Bearer <access_token>' \
+  -H 'Content-Type: application/json' \
+  -d '{"message":"請用 pie chart 畫後台 active/inactive 比例"}'
+```
