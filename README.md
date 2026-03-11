@@ -35,6 +35,26 @@ pnpm dev
 
 開啟 [http://localhost:3000](http://localhost:3000)。
 
+### 完整 Demo（前端 + Agent）
+
+建議使用兩個 terminal：
+
+Terminal A（前端）：
+
+```bash
+cd /Users/alex/demo
+pnpm dev
+```
+
+Terminal B（Agent backend）：
+
+```bash
+cd /Users/alex/demo/agent-backend
+pnpm install
+cp .env.sample .env
+pnpm dev
+```
+
 其他常用指令：
 
 ```bash
@@ -50,7 +70,7 @@ pnpm start
 ```bash
 cd /Users/alex/demo/agent-backend
 pnpm install
-cp .env.example .env
+cp .env.sample .env
 ```
 
 2. 編輯 `/Users/alex/demo/agent-backend/.env`，至少填入：
@@ -118,6 +138,8 @@ components/
       use-users-page-state.ts
       use-users-autocomplete.ts
     model.ts           # filter schema / query key builder
+    users-agent-card.tsx
+    users-agent-chart.tsx
     users-page-client.tsx
     users-table-card.tsx
   ui/* (shadcn components)
@@ -136,6 +158,13 @@ store/
   auth-store.ts
 types/
   api.ts
+agent-backend/
+  src/
+    server.mjs
+    agent/
+      schemas.mjs
+      logic.mjs
+      build-flow.mjs
 ```
 
 ## API 封裝設計
@@ -150,7 +179,7 @@ types/
   - 管理 refresh promise（避免多請求同時 refresh）
   - refresh 成功後更新 store 的 access token
 - `lib/api/services.ts`
-  - 對外暴露 `loginApi`, `getUsersApi` 等 API 呼叫 function
+  - 對外暴露 `loginApi`, `getUsersApi`, `askAgentApi` 等 API 呼叫 function
 - `lib/api/errors.ts`
   - `getApiErrorMessage`：統一解析 API error message
 
@@ -180,6 +209,14 @@ types/
 - 分頁使用 `keepPreviousData`，翻頁體驗較平順
 - 行動裝置 sidebar 自動切為 drawer
 
+## AI Assistant 範例語句
+
+- `後台總共幾個人？active 有幾個？`
+- `搜尋 alice`
+- `搜尋 alice@ionex.local`
+- `用 pie chart 畫 active/inactive 比例`
+- `用 line chart 顯示 total/active/inactive`
+
 ## 需求對應
 
 - [x] 登入 + token 儲存
@@ -190,9 +227,3 @@ types/
 - [x] 重新整理後維持登入
 - [x] TypeScript + React
 - [x] shadcn + zustand + TanStack Query
-
-## 可再加強項目
-
-- URL 同步篩選條件（可分享查詢狀態）
-- 自動化測試（auth refresh、filters、store hydrate）
-- 更完整 RBAC / 權限模型
