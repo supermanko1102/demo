@@ -27,6 +27,15 @@ interface AgentTurn {
   chart?: AgentChartPayload;
 }
 
+const QUICK_ACTIONS = [
+  { label: "問總人數", message: "後台總共幾個人？" },
+  { label: "問 Active", message: "active 有幾個？inactive 有幾個？" },
+  { label: "搜尋 Alice", message: "搜尋 alice" },
+  { label: "搜尋 Email", message: "搜尋 alice@ionex.local" },
+  { label: "Pie Chart", message: "用 pie chart 畫 active/inactive 比例" },
+  { label: "Line Chart", message: "用 line chart 顯示 total/active/inactive" },
+];
+
 export function UsersAgentCard() {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
@@ -78,9 +87,8 @@ export function UsersAgentCard() {
     },
   });
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const trimmed = message.trim();
+  const submitMessage = (rawMessage: string) => {
+    const trimmed = rawMessage.trim();
     if (!trimmed || askMutation.isPending) {
       return;
     }
@@ -105,6 +113,11 @@ export function UsersAgentCard() {
     });
   };
 
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    submitMessage(message);
+  };
+
   return (
     <Sheet onOpenChange={setOpen} open={open}>
       <div className="fixed right-4 bottom-4 z-40 md:right-6 md:bottom-6">
@@ -126,7 +139,7 @@ export function UsersAgentCard() {
               <Badge variant="outline">Genkit + Tools</Badge>
             </div>
             <SheetDescription>
-              可問總人數、active/inactive，並指定 pie 或 line chart。
+              可問總人數、active/inactive、搜尋姓名或 email，並指定 pie 或 line chart。
             </SheetDescription>
           </SheetHeader>
 
@@ -169,9 +182,24 @@ export function UsersAgentCard() {
               ))}
             </div>
 
+            <div className="mt-3 flex flex-wrap gap-2">
+              {QUICK_ACTIONS.map((action) => (
+                <Button
+                  disabled={askMutation.isPending}
+                  key={action.label}
+                  onClick={() => submitMessage(action.message)}
+                  size="sm"
+                  type="button"
+                  variant="secondary"
+                >
+                  {action.label}
+                </Button>
+              ))}
+            </div>
+
             <form className="mt-3 flex gap-2" onSubmit={handleSubmit}>
               <Input
-                placeholder="問我：用 pie chart 畫 active/inactive 比例"
+                placeholder="問我：搜尋 jenny@ionex.local 或用 pie chart 畫比例"
                 value={message}
                 onChange={(event) => setMessage(event.target.value)}
                 disabled={askMutation.isPending}
